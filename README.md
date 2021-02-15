@@ -3,4 +3,4 @@ Sparse table can answers range minimum query in constant time of non changing se
 
 Sparse table can help other algorithms in case like finding minimum value between two values of longest common prefix array (LCP array). LCP array is an auxiliary data structure of Suffix array.
 
-**tutorial/SparseTable.pdf** explains sparse table in detail.
+**Tutorial/SparseTable.pdf** explains sparse table in detail.
