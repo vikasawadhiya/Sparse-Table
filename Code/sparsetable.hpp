@@ -1,7 +1,7 @@
 /*********************************************************************************
 ** MIT License
 **
-** Copyright (c) 2021 VIKAS AWADHIYA
+** Copyright (c) 2025 Vikas Awadhiya
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a copy
 ** of this software and associated documentation files (the "Software"), to deal
@@ -27,78 +27,93 @@
 
 #include <cmath>
 #include <vector>
+#include <stdexcept>
 
 template <typename T>
 class SparseTable
 {
+    const std::vector<T>& sequence;
+    std::vector< std::vector<size_t> > table;
+
 public:
-    SparseTable(const std::vector<T>& elements);
+    explicit SparseTable(const std::vector<T>& elements);
 
-    std::size_t indexOfMinimumValue(std::size_t inclusiveFirstIndex, std::size_t inclusiveLastIndex,
-                    const std::vector<T>& elements) const;
-
-private:
-    std::vector<std::vector<T>> table;
+    std::size_t minQuery(std::size_t rangeInclusiveLowerBound, std::size_t rangeInclusiveUpperBound) const;
 };
 
 template <typename T>
-SparseTable<T>::SparseTable(const std::vector<T>& elements): table(std::log2(elements.size())){
+SparseTable<T>::SparseTable(const std::vector<T>& sequence):
+    sequence(sequence),
+    table(sequence.empty() ? 0 : static_cast<size_t>( std::log2(sequence.size() ) ) ){ //log2(0) is undfined.
 
-    table.front().reserve((elements.size() - 2) + 1);
+    if (sequence.size() < 2) {
 
-    for(std::size_t index = 0, lastIndex = elements.size() - 2; index <= lastIndex; ++index){
-
-        table.front().push_back((elements[index] < elements[index + 1]) ? index : index + 1);
+        return;
     }
 
-    std::size_t tableIndex = 1;
+    table.front().reserve(sequence.size() - 1);
 
-    for(std::size_t rangeLen = 4; rangeLen < elements.size(); rangeLen *= 2, ++tableIndex){
+    for(std::size_t index = 0, lastIndex = sequence.size() - 1; index < lastIndex; ++index){
 
-        std::size_t preTableIndex = tableIndex - 1;
+        table.front().push_back( (sequence[index] < sequence[index + 1]) ? index : index + 1 );
+    }
+
+    std::size_t row = 1;
+
+    for (std::size_t rangeLen = 4; rangeLen <= sequence.size(); rangeLen *= 2, ++row) {
+
+        std::size_t preRow = row - 1;
         std::size_t preRangeLen = rangeLen / 2;
 
-        table[tableIndex].reserve((elements.size() - rangeLen) + 1);
+        table[row].reserve( (sequence.size() - rangeLen) + 1 );
 
-        for(std::size_t index = 0, lastIndex = elements.size() - rangeLen; index <= lastIndex; ++index){
+        for (std::size_t index = 0, lastIndex = sequence.size() - rangeLen; index <= lastIndex; ++index) {
 
-            table[tableIndex].push_back(
-                        (elements[table[preTableIndex][index]] < elements[table[preTableIndex][index + preRangeLen]])?
-                        table[preTableIndex][index] : table[preTableIndex][index + preRangeLen]);
+            if (sequence[ table[preRow][index] ] < sequence[ table[preRow][index + preRangeLen] ]) {
+
+                table[row].push_back(table[preRow][index]);
+            }
+            else {
+                table[row].push_back(table[preRow][index + preRangeLen]);
+            }
         }
     }
 }
 
-template <typename T>
-std::size_t SparseTable<T>::indexOfMinimumValue(std::size_t inclusiveFirstIndex, std::size_t inclusiveLastIndex,
-                                                const std::vector<T> &elements) const{
+template<typename T>
+std::size_t SparseTable<T>::minQuery(std::size_t rangeInclusiveLowerBound, std::size_t rangeInclusiveUpperBound) const{
+    
+    if ( rangeInclusiveLowerBound > rangeInclusiveUpperBound || rangeInclusiveUpperBound >= sequence.size() ) {
 
-    if(inclusiveLastIndex == inclusiveFirstIndex){
 
-        return inclusiveFirstIndex;
+        throw std::invalid_argument("Invalid range!");
     }
 
-    std::size_t numOfElements = (inclusiveLastIndex - inclusiveFirstIndex) + 1;
+    if (rangeInclusiveUpperBound == rangeInclusiveLowerBound) {
 
-    std::size_t tableIndex = std::log2(numOfElements) - 1;
-    std::size_t rangeLen = 1 << (tableIndex + 1);
-
-
-    if(numOfElements == rangeLen){
-
-        return table[tableIndex][inclusiveFirstIndex];
+        return rangeInclusiveLowerBound;
     }
-    else{
-        std::size_t inclusiveNextIndex = inclusiveFirstIndex + (numOfElements - rangeLen);
 
-        if(elements[table[tableIndex][inclusiveFirstIndex]] < elements[table[tableIndex][inclusiveNextIndex]]){
+    std::size_t numOfElements = (rangeInclusiveUpperBound - rangeInclusiveLowerBound) + 1;
 
-            return table[tableIndex][inclusiveFirstIndex];
-        }
-        else{
-            return table[tableIndex][inclusiveNextIndex];
-        }
+    std::size_t row = static_cast<size_t>( std::log2(numOfElements) ) - 1;  //Explicit use of std::floor() function is
+                                                                            //not required.
+    std::size_t rangeLen = 1;
+    rangeLen = rangeLen << (row + 1);
+
+    if (numOfElements == rangeLen) {
+
+        return table[row][rangeInclusiveLowerBound];
     }
+    
+    std::size_t otherSubRangeInclusiveLowerBound = rangeInclusiveLowerBound + (numOfElements - rangeLen);
+
+    if (sequence[ table[row][rangeInclusiveLowerBound] ] < sequence[ table[row][otherSubRangeInclusiveLowerBound] ]) {
+
+        return table[row][rangeInclusiveLowerBound];
+    }
+    
+    return table[row][otherSubRangeInclusiveLowerBound];
 }
 
 

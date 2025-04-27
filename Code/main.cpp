@@ -1,7 +1,7 @@
 /*********************************************************************************
 ** MIT License
 **
-** Copyright (c) 2021 VIKAS AWADHIYA
+** Copyright (c) 2025 Vikas Awadhiya
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a copy
 ** of this software and associated documentation files (the "Software"), to deal
@@ -27,18 +27,24 @@
 #include <iostream>
 #include <vector>
 
-using std::cout;
+using namespace std;
+
 
 int main(){
 
-    std::vector<std::size_t> elements{1, 4, 2, 0, 9, 7, 8, 3, 5, 6};
+    // A Sequence doesn't have to be constant, but 
+    // a non-constant sequence must not be modified after the sparse table creation.
 
-    SparseTable<std::size_t> table(elements);
+    const vector<int> sequence{1, 4, 2, 0, 9, 7, 8, 3, 5, 6}; 
 
-    for(auto indexs : std::vector<std::pair<std::size_t, std::string::size_type>>{
-    {0, 6}, {1, 5}, {0, 9}, {2, 5}, {2, 6}, {3, 4}, {4, 7}, {4, 9}, {8, 9}}){
+    SparseTable<int> table(sequence);
 
-        std::string::size_type minIndex = table.indexOfMinimumValue(indexs.first, indexs.second, elements);
-        cout<< "min("<< indexs.first<< ", "<< indexs.second<< ") = "<< elements[minIndex]<< "("<< minIndex<< ")\n";
+    vector< pair<size_t, size_t> > queryRanges{ {0, 6}, {1, 5}, {0, 9}, {2, 5}, {2, 6}, {3, 4}, {4, 7}, {4, 9}, {8, 9} };
+    
+    for (auto& range : queryRanges) {
+
+        size_t minElementIndex = table.minQuery(range.first, range.second);
+
+        cout << "range[" << range.first << ", " << range.second << "] min value = " << sequence[minElementIndex] << '\n';
     }
 }
